@@ -4,172 +4,195 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>土蔵の罰ゲームクソ日記</title>
+
+  <!-- Firebase SDK (compat v10) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
       background: #1a1a2e;
       color: #e0e0e0;
       min-height: 100vh;
-      padding: 20px;
+      padding-bottom: 48px;
     }
 
+    /* ===== HEADER ===== */
     header {
+      background: linear-gradient(160deg, #16213e, #0f3460);
+      border-bottom: 2px solid #c62828;
+      padding: 20px 16px 16px;
       text-align: center;
-      padding: 30px 20px 20px;
     }
 
     header h1 {
-      font-size: 2rem;
+      font-size: clamp(1.15rem, 5.5vw, 1.9rem);
       color: #ff6b6b;
-      text-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
-      letter-spacing: 0.05em;
-      margin-bottom: 8px;
+      text-shadow: 0 0 18px rgba(255,107,107,0.5);
+      letter-spacing: 0.04em;
+      margin-bottom: 5px;
     }
 
-    header p.subtitle {
-      font-size: 0.85rem;
+    .subtitle {
+      font-size: clamp(0.68rem, 2.8vw, 0.82rem);
+      color: #778;
+      margin-bottom: 12px;
+    }
+
+    /* ===== OWNER BUTTON ===== */
+    #ownerBtn {
+      background: transparent;
+      border: 1px solid #444;
       color: #888;
+      border-radius: 20px;
+      padding: 7px 18px;
+      font-size: clamp(0.8rem, 3vw, 0.88rem);
+      cursor: pointer;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.2s;
+    }
+    #ownerBtn.active {
+      border-color: #4a90d9;
+      color: #a0c4ff;
+      background: rgba(74,144,217,0.15);
     }
 
-    /* ===== ALERT SECTION ===== */
-    #alerts {
-      max-width: 800px;
-      margin: 0 auto 30px;
+    /* ===== CONNECTION ===== */
+    #connStatus {
+      font-size: clamp(0.65rem, 2.5vw, 0.72rem);
+      margin-top: 6px;
+      color: #555;
+    }
+    #connStatus.ok  { color: #4caf50; }
+    #connStatus.err { color: #ff5722; }
+
+    /* ===== SETUP WARNING ===== */
+    #setupWarning {
+      background: #2a1a00;
+      border: 2px solid #ff9800;
+      border-radius: 10px;
+      margin: 16px 12px;
+      padding: 16px;
+      font-size: clamp(0.8rem, 3vw, 0.9rem);
+      color: #ffb74d;
+      display: none;
+    }
+    #setupWarning.show { display: block; }
+    #setupWarning code {
+      background: #1a0e00;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
     }
 
-    .alert-title {
-      font-size: 1.1rem;
+    /* ===== MAIN ===== */
+    main {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 12px;
+    }
+
+    /* ===== ALERTS ===== */
+    #alerts { margin: 18px 0 14px; }
+
+    #alertHeader {
+      font-size: clamp(0.9rem, 3.5vw, 1.05rem);
       font-weight: bold;
       color: #ff4444;
       text-align: center;
       margin-bottom: 10px;
       display: none;
     }
-
-    .alert-title.visible {
-      display: block;
-    }
+    #alertHeader.visible { display: block; }
 
     .missing-alert {
       background: #2d0000;
-      border: 2px solid #ff0000;
+      border: 2px solid #cc0000;
       border-radius: 8px;
-      padding: 12px 18px;
+      padding: 11px 14px;
       margin-bottom: 8px;
-      color: #ff2222;
-      font-size: 1.1rem;
+      color: #ff3333;
+      font-size: clamp(0.85rem, 3.8vw, 1.05rem);
       font-weight: bold;
       text-align: center;
       animation: pulse 2s infinite;
     }
 
     @keyframes pulse {
-      0%, 100% { border-color: #ff0000; box-shadow: 0 0 8px rgba(255, 0, 0, 0.4); }
-      50%       { border-color: #ff6666; box-shadow: 0 0 18px rgba(255, 0, 0, 0.8); }
+      0%,100% { border-color: #cc0000; box-shadow: 0 0 6px rgba(204,0,0,0.4); }
+      50%      { border-color: #ff5555; box-shadow: 0 0 14px rgba(255,80,80,0.7); }
     }
 
-    /* ===== DIARY LIST ===== */
-    #diary-list {
-      max-width: 800px;
-      margin: 0 auto;
+    /* ===== LOADING ===== */
+    #loading {
+      text-align: center;
+      padding: 40px 16px;
+      color: #556;
+      font-size: 0.9rem;
+    }
+
+    /* ===== DIARY CARDS ===== */
+    #diaryList {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 10px;
     }
 
     .day-card {
       background: #16213e;
       border: 1px solid #0f3460;
-      border-radius: 12px;
+      border-radius: 10px;
       overflow: hidden;
-      transition: box-shadow 0.2s;
     }
+    .day-card.missing  { border-color: #5c0000; }
+    .day-card.complete { border-color: #1a5c3a; }
+    .day-card.future   { opacity: 0.42; }
 
-    .day-card:hover {
-      box-shadow: 0 4px 20px rgba(15, 52, 96, 0.6);
-    }
-
-    .day-card.future {
-      opacity: 0.5;
-    }
-
-    .day-card.missing {
-      border-color: #550000;
-    }
-
-    .day-card.complete {
-      border-color: #1a5c3a;
-    }
-
+    /* ===== CARD HEADER ===== */
     .day-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 18px;
+      gap: 8px;
+      padding: 14px 14px;
       cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
       user-select: none;
-      background: rgba(255,255,255,0.03);
     }
-
-    .day-header:hover {
-      background: rgba(255,255,255,0.06);
-    }
+    .day-header:active { background: rgba(255,255,255,0.04); }
 
     .day-label {
-      font-size: 1rem;
+      font-size: clamp(0.83rem, 3.5vw, 0.97rem);
       font-weight: bold;
       color: #a0c4ff;
+      flex: 1;
+      min-width: 0;
     }
 
     .day-status {
-      font-size: 0.8rem;
-      padding: 3px 10px;
+      font-size: clamp(0.68rem, 2.5vw, 0.78rem);
+      padding: 4px 10px;
       border-radius: 20px;
       font-weight: bold;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
+    .s-missing  { background:#3d0000; color:#ff4444; border:1px solid #ff2222; }
+    .s-complete { background:#0d2b1d; color:#4caf50; border:1px solid #388e3c; }
+    .s-future   { background:#1a1a2e; color:#555;    border:1px solid #333; }
+    .s-today    { background:#1a2e1a; color:#ffeb3b; border:1px solid #f9a825; }
 
-    .status-missing {
-      background: #3d0000;
-      color: #ff4444;
-      border: 1px solid #ff2222;
-    }
-
-    .status-complete {
-      background: #0d2b1d;
-      color: #4caf50;
-      border: 1px solid #388e3c;
-    }
-
-    .status-future {
-      background: #1a1a2e;
-      color: #555;
-      border: 1px solid #333;
-    }
-
-    .status-today {
-      background: #1a2e1a;
-      color: #ffeb3b;
-      border: 1px solid #f9a825;
-    }
-
-    .day-body {
-      padding: 0 18px 16px;
-      display: none;
-    }
-
-    .day-body.open {
-      display: block;
-    }
+    /* ===== CARD BODY ===== */
+    .day-body { display: none; padding: 0 14px 14px; }
+    .day-body.open { display: block; }
 
     .char-hint {
-      font-size: 0.75rem;
-      color: #666;
+      font-size: clamp(0.7rem, 2.5vw, 0.75rem);
+      color: #667;
       margin-bottom: 6px;
     }
 
@@ -180,81 +203,122 @@
       border-radius: 8px;
       color: #e0e0e0;
       font-family: inherit;
-      font-size: 0.95rem;
-      line-height: 1.7;
-      padding: 10px 14px;
+      /* 16px minimum prevents iOS auto-zoom */
+      font-size: clamp(1rem, 3.5vw, 1rem);
+      line-height: 1.8;
+      padding: 10px 12px;
       resize: vertical;
-      min-height: 120px;
+      min-height: 110px;
       outline: none;
       transition: border-color 0.2s;
+      -webkit-appearance: none;
     }
-
-    .diary-textarea:focus {
-      border-color: #4a90d9;
-    }
-
-    .diary-textarea:disabled {
-      color: #555;
-      cursor: not-allowed;
-    }
+    .diary-textarea:focus    { border-color: #4a90d9; }
+    .diary-textarea[readonly]{ background:#0a1320; color:#bbb; cursor:default; }
+    .diary-textarea:disabled { color:#555; cursor:not-allowed; }
 
     .card-footer {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
       margin-top: 10px;
     }
 
-    .char-count {
-      font-size: 0.8rem;
-      color: #666;
-    }
-
-    .char-count.enough {
-      color: #4caf50;
-    }
-
-    .char-count.low {
-      color: #ff9800;
-    }
+    .char-count        { font-size: clamp(0.75rem, 2.8vw, 0.82rem); color: #667; }
+    .char-count.enough { color: #4caf50; }
+    .char-count.low    { color: #ff9800; }
 
     .save-btn {
       background: #0f3460;
       color: #a0c4ff;
       border: 1px solid #4a90d9;
-      border-radius: 6px;
-      padding: 6px 18px;
-      font-size: 0.85rem;
+      border-radius: 8px;
+      padding: 8px 22px;
+      font-size: clamp(0.85rem, 3vw, 0.9rem);
       cursor: pointer;
       font-family: inherit;
+      min-height: 42px;
       transition: background 0.2s;
+      -webkit-appearance: none;
     }
+    .save-btn:hover    { background: #1a4f8a; }
+    .save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .save-btn.hidden   { display: none; }
 
-    .save-btn:hover {
-      background: #1a4f8a;
-    }
+    .saved-notice          { font-size: 0.8rem; color: #4caf50; display: none; }
+    .saved-notice.show     { display: inline; }
 
-    .save-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .saved-notice {
-      font-size: 0.8rem;
-      color: #4caf50;
+    /* ===== PASSWORD MODAL ===== */
+    #modalOverlay {
       display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.78);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #modalOverlay.open { display: flex; }
+
+    .modal {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 14px;
+      padding: 28px 22px 22px;
+      width: 100%;
+      max-width: 340px;
+    }
+    .modal h2 {
+      font-size: clamp(1rem, 4vw, 1.1rem);
+      color: #a0c4ff;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .modal input[type="password"] {
+      width: 100%;
+      background: #0d1b2e;
+      border: 1px solid #0f3460;
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-size: 1rem; /* 16px – no iOS zoom */
+      padding: 10px 14px;
+      outline: none;
+      font-family: inherit;
+      margin-bottom: 8px;
+      -webkit-appearance: none;
+    }
+    .modal input[type="password"]:focus { border-color: #4a90d9; }
+
+    #pwError {
+      font-size: 0.8rem;
+      color: #ff4444;
+      min-height: 1.2em;
+      margin-bottom: 10px;
     }
 
-    .saved-notice.show {
-      display: inline;
+    .modal-btns { display: flex; gap: 10px; }
+    .modal-btns button {
+      flex: 1;
+      padding: 11px;
+      border-radius: 8px;
+      font-size: clamp(0.85rem, 3vw, 0.92rem);
+      cursor: pointer;
+      font-family: inherit;
+      min-height: 44px;
+      border: none;
     }
+    #btnLogin  { background:#0f3460; color:#a0c4ff; border:1px solid #4a90d9; }
+    #btnLogin:hover { background: #1a4f8a; }
+    #btnCancel { background:#222; color:#888; }
 
     footer {
       text-align: center;
-      margin-top: 40px;
-      padding-bottom: 30px;
-      font-size: 0.75rem;
-      color: #444;
+      margin-top: 32px;
+      font-size: clamp(0.68rem, 2.5vw, 0.75rem);
+      color: #334;
     }
   </style>
 </head>
@@ -262,212 +326,293 @@
 
 <header>
   <h1>土蔵の罰ゲームクソ日記</h1>
-  <p class="subtitle">2026年2月16日 〜 3月8日（21日間）｜1日の目安：100文字</p>
+  <p class="subtitle">2026年2月16日〜3月8日（21日間）｜目安100文字/日</p>
+  <button id="ownerBtn" onclick="promptOwner()">✏️ 日記を書く</button>
+  <p id="connStatus">接続中...</p>
 </header>
 
-<section id="alerts">
-  <p class="alert-title" id="alert-title">⚠️ 書いていない日があります！！！</p>
-</section>
+<!-- Firebase 未設定時の案内 -->
+<div id="setupWarning">
+  <strong>⚙️ Firebase の設定が必要です</strong><br><br>
+  このアプリは Firebase Realtime Database を使って日記を共有します。<br><br>
+  <strong>設定手順：</strong><br>
+  1. <a href="https://console.firebase.google.com/" target="_blank" style="color:#ffb74d">Firebase Console</a> でプロジェクトを作成<br>
+  2. Realtime Database を有効化（テストモードで開始）<br>
+  3. プロジェクト設定 → ウェブアプリ追加 → config をコピー<br>
+  4. <code>index.html</code> の <code>firebaseConfig</code> と <code>OWNER_PASSWORD</code> を書き換えて再デプロイ<br><br>
+  ※ Realtime Database のルールを以下に設定してください（読み取り公開、書き込みはパスワード確認済みの場合）<br>
+  <code>{ "rules": { ".read": true, ".write": true } }</code>
+</div>
 
-<section id="diary-list"></section>
+<main>
+  <section id="alerts">
+    <p id="alertHeader">⚠️ 書いていない日があります！！！</p>
+  </section>
+  <div id="loading">読み込み中...</div>
+  <section id="diaryList"></section>
+</main>
 
 <footer>がんばれ土蔵</footer>
 
+<!-- パスワードモーダル -->
+<div id="modalOverlay">
+  <div class="modal">
+    <h2>🔐 オーナー認証</h2>
+    <input type="password" id="pwInput" placeholder="パスワードを入力"
+           autocomplete="off" onkeydown="if(event.key==='Enter')submitPw()">
+    <p id="pwError"></p>
+    <div class="modal-btns">
+      <button id="btnCancel" onclick="closeModal()">キャンセル</button>
+      <button id="btnLogin"  onclick="submitPw()">ログイン</button>
+    </div>
+  </div>
+</div>
+
 <script>
-  // ---- 設定 ----
-  const START_DATE = new Date(2026, 1, 16); // 2月16日
-  const TOTAL_DAYS = 21;
-  const TARGET_CHARS = 100;
-  const STORAGE_KEY = 'dozoDiary';
+// ================================================================
+//  ★ Firebase 設定 ★
+//  Firebase Console (https://console.firebase.google.com/) で
+//  プロジェクトを作成し、以下の値を書き換えてください。
+// ================================================================
+const firebaseConfig = {
+  apiKey:            "YOUR_API_KEY",
+  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
+  databaseURL:       "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+  projectId:         "YOUR_PROJECT_ID",
+  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId:             "YOUR_APP_ID"
+};
 
-  // ---- ユーティリティ ----
-  function dateOf(offset) {
-    const d = new Date(START_DATE);
-    d.setDate(d.getDate() + offset);
-    return d;
-  }
+// ★ 土蔵が日記を書くためのパスワード（好きな値に変えてOK）★
+const OWNER_PASSWORD = 'dozo2026';
+// ================================================================
 
-  function dateKey(d) {
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  }
+// ---- 設定チェック ----
+const isConfigured = firebaseConfig.apiKey !== 'YOUR_API_KEY';
+if (!isConfigured) {
+  document.getElementById('setupWarning').classList.add('show');
+  document.getElementById('loading').textContent = 'Firebase の設定が必要です（上の案内を参照）';
+}
 
-  function jpDate(d) {
-    return `${d.getMonth()+1}月${d.getDate()}日`;
-  }
+// ---- 定数 ----
+const START_DATE   = new Date(2026, 1, 16); // 2月16日
+const TOTAL_DAYS   = 21;
+const TARGET_CHARS = 100;
 
-  function jpDateFull(d) {
-    const days = ['日','月','火','水','木','金','土'];
-    return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;
-  }
+let isOwner   = false;
+let diaryData = {};
 
-  function today() {
-    const n = new Date();
-    return new Date(n.getFullYear(), n.getMonth(), n.getDate());
-  }
+// ---- ユーティリティ ----
+const dateOf  = i => { const d = new Date(START_DATE); d.setDate(d.getDate()+i); return d; };
+const dateKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const pad     = n => String(n).padStart(2, '0');
+const jpDate  = d => `${d.getMonth()+1}月${d.getDate()}日`;
+const jpDateFull = d => {
+  const wd = ['日','月','火','水','木','金','土'];
+  return `${d.getMonth()+1}月${d.getDate()}日（${wd[d.getDay()]}）`;
+};
+const today = () => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); };
+const charClass = n => n >= TARGET_CHARS ? 'enough' : n > 0 ? 'low' : '';
 
-  function loadAll() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
-    catch { return {}; }
-  }
+// ---- Firebase ----
+if (isConfigured) {
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-  function saveAll(data) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }
+  // 接続状態
+  db.ref('.info/connected').on('value', snap => {
+    const el = document.getElementById('connStatus');
+    if (snap.val()) {
+      el.textContent = '● リアルタイム同期中';
+      el.className = 'ok';
+    } else {
+      el.textContent = '● オフライン';
+      el.className = 'err';
+    }
+  });
 
-  // ---- 描画 ----
-  const data = loadAll();
-  const diaryList = document.getElementById('diary-list');
-  const alertSection = document.getElementById('alerts');
-  const alertTitle = document.getElementById('alert-title');
+  // データ監視（変更があれば即座に全員の画面に反映）
+  db.ref('diary').on('value', snap => {
+    diaryData = snap.val() || {};
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('diaryList').style.display = '';
+    renderAll();
+  });
+
+  // 保存関数（Firebase に書き込む）
+  window.saveEntry = key => {
+    const val = document.getElementById(`ta-${key}`).value;
+    db.ref(`diary/${key}`).set(val || null)
+      .then(() => {
+        const el = document.getElementById(`saved-${key}`);
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 2500);
+      })
+      .catch(err => alert('保存失敗: ' + err.message));
+  };
+
+} else {
+  // Firebase 未設定時は localStorage フォールバック
+  const LS_KEY = 'dozoDiary_local';
+  const loadLocal = () => { try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch { return {}; } };
+  const saveLocal = d => localStorage.setItem(LS_KEY, JSON.stringify(d));
+
+  diaryData = loadLocal();
+  document.getElementById('diaryList').style.display = '';
+  document.getElementById('loading').style.display = 'none';
+  renderAll();
+
+  window.saveEntry = key => {
+    const val = document.getElementById(`ta-${key}`).value;
+    diaryData[key] = val || undefined;
+    if (!val) delete diaryData[key];
+    saveLocal(diaryData);
+    const el = document.getElementById(`saved-${key}`);
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+    renderAll();
+  };
+}
+
+// ---- 描画 ----
+function renderAll() {
+  renderCards();
+  renderAlerts();
+}
+
+function renderCards() {
+  const t = today();
+  const container = document.getElementById('diaryList');
+  // 開いているカードを記憶
+  const openSet = new Set();
+  container.querySelectorAll('.day-body.open').forEach(el => openSet.add(el.id));
+
+  container.innerHTML = '';
 
   for (let i = 0; i < TOTAL_DAYS; i++) {
-    const d = dateOf(i);
-    const key = dateKey(d);
-    const t = today();
-    const isPast = d < t;
-    const isToday = d.getTime() === t.getTime();
+    const d        = dateOf(i);
+    const key      = dateKey(d);
+    const isPast   = d < t;
+    const isToday  = d.getTime() === t.getTime();
     const isFuture = d > t;
-    const entry = data[key] || '';
+    const entry    = diaryData[key] || '';
     const hasEntry = entry.trim().length > 0;
+    const n        = entry.trim().length;
 
-    // ---- カード ----
+    let sCls, sTxt;
+    if (isFuture)       { sCls='s-future';  sTxt='未来'; }
+    else if (isToday)   { sCls=hasEntry?'s-complete':'s-today'; sTxt=hasEntry?`✓ ${n}文字`:'今日！'; }
+    else if (hasEntry)  { sCls='s-complete'; sTxt=`✓ ${n}文字`; }
+    else                { sCls='s-missing';  sTxt='未記入'; }
+
+    const cardCls = [
+      'day-card',
+      isFuture ? 'future' : (!hasEntry && isPast ? 'missing' : hasEntry ? 'complete' : '')
+    ].filter(Boolean).join(' ');
+
+    const canEdit    = isOwner && !isFuture;
+    const bodyId     = `body-${key}`;
+    const isOpen     = openSet.has(bodyId) || isToday;
+    const taAttr     = isFuture ? 'disabled' : canEdit ? '' : 'readonly';
+    const phText     = isFuture ? 'まだ書けません' : '今日のことを書いてね（目安100文字）';
+    const hintExtra  = !isOwner && !isFuture ? '（閲覧モード）' : '';
+
     const card = document.createElement('div');
-    card.className = 'day-card';
-    card.id = `card-${key}`;
-    if (isFuture) card.classList.add('future');
-    else if (!hasEntry && isPast) card.classList.add('missing');
-    else if (hasEntry) card.classList.add('complete');
-
-    // ステータスラベル
-    let statusClass, statusText;
-    if (isFuture) {
-      statusClass = 'status-future';
-      statusText = '未来';
-    } else if (isToday) {
-      statusClass = hasEntry ? 'status-complete' : 'status-today';
-      statusText = hasEntry ? `✓ ${entry.trim().length}文字` : '今日！';
-    } else if (hasEntry) {
-      statusClass = 'status-complete';
-      statusText = `✓ ${entry.trim().length}文字`;
-    } else {
-      statusClass = 'status-missing';
-      statusText = '未記入';
-    }
-
+    card.className = cardCls;
     card.innerHTML = `
       <div class="day-header" onclick="toggleCard('${key}')">
         <span class="day-label">${jpDateFull(d)}</span>
-        <span class="day-status ${statusClass}" id="status-${key}">${statusText}</span>
+        <span class="day-status ${sCls}" id="status-${key}">${sTxt}</span>
       </div>
-      <div class="day-body" id="body-${key}">
-        <p class="char-hint">目安: ${TARGET_CHARS}文字以上</p>
-        <textarea
-          class="diary-textarea"
-          id="ta-${key}"
-          placeholder="今日のことを書いてね（目安${TARGET_CHARS}文字）"
-          ${isFuture ? 'disabled' : ''}
+      <div class="day-body${isOpen?' open':''}" id="${bodyId}">
+        <p class="char-hint">目安: ${TARGET_CHARS}文字以上${hintExtra}</p>
+        <textarea class="diary-textarea" id="ta-${key}"
+          placeholder="${phText}" ${taAttr}
           oninput="onInput('${key}')"
         >${entry}</textarea>
         <div class="card-footer">
-          <span class="char-count ${charClass(entry.trim().length)}" id="cc-${key}">${entry.trim().length} / ${TARGET_CHARS}文字</span>
+          <span class="char-count ${charClass(n)}" id="cc-${key}">${n} / ${TARGET_CHARS}文字</span>
           <div>
             <span class="saved-notice" id="saved-${key}">保存済み ✓</span>
-            <button class="save-btn" id="btn-${key}" onclick="saveEntry('${key}')" ${isFuture ? 'disabled' : ''}>保存</button>
+            <button class="save-btn${canEdit?'':' hidden'}" id="btn-${key}"
+              onclick="saveEntry('${key}')">保存</button>
           </div>
         </div>
-      </div>
-    `;
+      </div>`;
+    container.appendChild(card);
+  }
+}
 
-    diaryList.appendChild(card);
-
-    // 今日のカードは最初から開く
-    if (isToday) {
-      document.getElementById(`body-${key}`).classList.add('open');
+function renderAlerts() {
+  const section = document.getElementById('alerts');
+  section.querySelectorAll('.missing-alert').forEach(el => el.remove());
+  const t = today();
+  let count = 0;
+  for (let i = 0; i < TOTAL_DAYS; i++) {
+    const d = dateOf(i);
+    if (d >= t) continue;
+    if (!(diaryData[dateKey(d)] || '').trim()) {
+      count++;
+      const div = document.createElement('div');
+      div.className = 'missing-alert';
+      div.textContent = `土蔵は${jpDate(d)}の日記を書いていません！！！`;
+      section.appendChild(div);
     }
   }
+  const hdr = document.getElementById('alertHeader');
+  hdr.className = count > 0 ? 'visible' : '';
+}
 
-  // ---- アラート（未記入の過去日） ----
-  function renderAlerts() {
-    const fresh = loadAll();
-    // 既存アラートを削除
-    alertSection.querySelectorAll('.missing-alert').forEach(el => el.remove());
-    alertTitle.classList.remove('visible');
+// ---- インタラクション ----
+function toggleCard(key) {
+  document.getElementById(`body-${key}`).classList.toggle('open');
+}
 
-    const t = today();
-    let count = 0;
-    for (let i = 0; i < TOTAL_DAYS; i++) {
-      const d = dateOf(i);
-      if (d >= t) continue; // 今日以降はスキップ
-      const key = dateKey(d);
-      const entry = fresh[key] || '';
-      if (!entry.trim()) {
-        count++;
-        const alert = document.createElement('div');
-        alert.className = 'missing-alert';
-        alert.textContent = `土蔵は${jpDate(d)}の日記を書いていません！！！`;
-        alertSection.appendChild(alert);
-      }
-    }
-    if (count > 0) alertTitle.classList.add('visible');
+function onInput(key) {
+  const n = document.getElementById(`ta-${key}`).value.trim().length;
+  const cc = document.getElementById(`cc-${key}`);
+  cc.textContent = `${n} / ${TARGET_CHARS}文字`;
+  cc.className = `char-count ${charClass(n)}`;
+  document.getElementById(`saved-${key}`).classList.remove('show');
+}
+
+// ---- オーナーモード ----
+function promptOwner() {
+  if (isOwner) {
+    isOwner = false;
+    const btn = document.getElementById('ownerBtn');
+    btn.textContent = '✏️ 日記を書く';
+    btn.classList.remove('active');
+    renderCards();
+    return;
   }
+  document.getElementById('pwError').textContent = '';
+  document.getElementById('pwInput').value = '';
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('pwInput').focus(), 100);
+}
 
-  renderAlerts();
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
 
-  // ---- インタラクション ----
-  function charClass(n) {
-    if (n >= TARGET_CHARS) return 'enough';
-    if (n > 0) return 'low';
-    return '';
+function submitPw() {
+  if (document.getElementById('pwInput').value === OWNER_PASSWORD) {
+    isOwner = true;
+    closeModal();
+    const btn = document.getElementById('ownerBtn');
+    btn.textContent = '✏️ 編集中（タップでログアウト）';
+    btn.classList.add('active');
+    renderCards();
+  } else {
+    document.getElementById('pwError').textContent = 'パスワードが違います';
   }
+}
 
-  function onInput(key) {
-    const ta = document.getElementById(`ta-${key}`);
-    const cc = document.getElementById(`cc-${key}`);
-    const n = ta.value.trim().length;
-    cc.textContent = `${n} / ${TARGET_CHARS}文字`;
-    cc.className = `char-count ${charClass(n)}`;
-    document.getElementById(`saved-${key}`).classList.remove('show');
-  }
-
-  function saveEntry(key) {
-    const ta = document.getElementById(`ta-${key}`);
-    const val = ta.value;
-    const fresh = loadAll();
-    fresh[key] = val;
-    saveAll(fresh);
-
-    // カードスタイル更新
-    const card = document.getElementById(`card-${key}`);
-    const hasEntry = val.trim().length > 0;
-    card.classList.toggle('missing', !hasEntry);
-    card.classList.toggle('complete', hasEntry);
-
-    // ステータス更新
-    const statusEl = document.getElementById(`status-${key}`);
-    const n = val.trim().length;
-    if (hasEntry) {
-      statusEl.className = 'day-status status-complete';
-      statusEl.textContent = `✓ ${n}文字`;
-    } else {
-      const d = new Date(key.replace(/-/g, '/'));
-      const t = today();
-      statusEl.className = `day-status ${d.getTime() === t.getTime() ? 'status-today' : 'status-missing'}`;
-      statusEl.textContent = d.getTime() === t.getTime() ? '今日！' : '未記入';
-    }
-
-    // 保存済み表示
-    const savedEl = document.getElementById(`saved-${key}`);
-    savedEl.classList.add('show');
-    setTimeout(() => savedEl.classList.remove('show'), 2000);
-
-    // アラート再描画
-    renderAlerts();
-  }
-
-  function toggleCard(key) {
-    const body = document.getElementById(`body-${key}`);
-    body.classList.toggle('open');
-  }
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+});
 </script>
 </body>
 </html>
