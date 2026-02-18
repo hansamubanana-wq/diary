@@ -326,7 +326,7 @@
 
 <header>
   <h1>土蔵の罰ゲームクソ日記</h1>
-  <p class="subtitle">2026年2月16日〜3月8日（21日間）｜目安100文字/日</p>
+  <p class="subtitle">2026年2月16日〜3月8日（21日間）</p>
   <button id="ownerBtn" onclick="promptOwner()">✏️ 日記を書く</button>
   <p id="connStatus">接続中...</p>
 </header>
@@ -527,13 +527,12 @@ function renderCards() {
         <span class="day-status ${sCls}" id="status-${key}">${sTxt}</span>
       </div>
       <div class="day-body${isOpen?' open':''}" id="${bodyId}">
-        <p class="char-hint">目安: ${TARGET_CHARS}文字以上${hintExtra}</p>
         <textarea class="diary-textarea" id="ta-${key}"
           placeholder="${phText}" ${taAttr}
           oninput="onInput('${key}')"
         >${entry}</textarea>
         <div class="card-footer">
-          <span class="char-count ${charClass(n)}" id="cc-${key}">${n} / ${TARGET_CHARS}文字</span>
+          <span class="char-count" id="cc-${key}">${n}文字</span>
           <div>
             <span class="saved-notice" id="saved-${key}">保存済み ✓</span>
             <button class="save-btn${canEdit?'':' hidden'}" id="btn-${key}"
@@ -573,8 +572,8 @@ function toggleCard(key) {
 function onInput(key) {
   const n = document.getElementById(`ta-${key}`).value.trim().length;
   const cc = document.getElementById(`cc-${key}`);
-  cc.textContent = `${n} / ${TARGET_CHARS}文字`;
-  cc.className = `char-count ${charClass(n)}`;
+  cc.textContent = `${n}文字`;
+  cc.className = 'char-count';
   document.getElementById(`saved-${key}`).classList.remove('show');
 }
 
